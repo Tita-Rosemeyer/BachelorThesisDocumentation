@@ -1,0 +1,21 @@
+digraph G {
+  label="Justbug.assign : wrap";
+  v_y [color="#000005", label="(v.y)", ];
+  v_x [color="#000007", label="(v.x)", ];
+  x [color="#000005", label="(x)", ];
+  y [color="#000003", label="(y)", ];
+  w_y [color="#000007", label="(w.y)", ];
+  w_x [color="#000009", label="(w.x)", ];
+  
+  
+  v_x -> v_y [dir=none, style="solid", ];
+  y -> v_y [dir=none, style="solid", ];
+  y -> v_x [dir=none, style="solid", ];
+  y -> x [dir=none, style="solid", ];
+  w_y -> x [dir=none, style="solid", ];
+  w_y -> y [dir=none, style="solid", ];
+  w_x -> x [dir=none, style="solid", ];
+  w_x -> y [dir=none, style="solid", ];
+  w_x -> w_y [dir=none, style="solid", ];
+  
+  }

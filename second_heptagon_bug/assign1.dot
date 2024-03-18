@@ -1,0 +1,9 @@
+digraph G {
+  label="Justbug.assign : vec";
+  v [color="#000003", label="(v)", ];
+  w [color="#000003", label="(w)", ];
+  
+  
+  w -> v [dir=none, style="dashed", ];
+  
+  }
