@@ -1,0 +1,1680 @@
+open Mathext
+const pid_roll_rate_kp: float = 250.0
+const pid_roll_rate_ki: float = 500.0
+const pid_roll_rate_kd: float = 2.5
+const pid_roll_rate_integration_limit: float = 33.3
+const pid_roll_rate_integration_lim: bool = true
+
+const pid_pitch_rate_kp: float = 250.0
+const pid_pitch_rate_ki: float = 500.0
+const pid_pitch_rate_kd: float = 2.5
+const pid_pitch_rate_integration_limit: float = 33.3
+const pid_pitch_rate_integration_lim: bool = true
+
+const pid_yaw_rate_kp: float = 120.0
+const pid_yaw_rate_ki: float = 16.7
+const pid_yaw_rate_kd: float = 0.0
+const pid_yaw_rate_integration_limit: float = 166.7
+const pid_yaw_rate_integration_lim: bool = true
+
+const pid_roll_kp: float = 6.0
+const pid_roll_ki: float = 3.0
+const pid_roll_kd: float = 0.0
+const pid_roll_integration_limit: float = 20.0
+const pid_roll_integration_lim: bool = true
+
+const pid_pitch_kp: float = 6.0
+const pid_pitch_ki: float = 3.0
+const pid_pitch_kd: float = 0.0
+const pid_pitch_integration_limit: float = 20.0
+const pid_pitch_integration_lim: bool = true
+
+const pid_yaw_kp: float = 6.0
+const pid_yaw_ki: float = 1.0
+const pid_yaw_kd: float = 0.35
+const pid_yaw_integration_limit: float = 360.0
+const pid_yaw_integration_lim: bool = true
+
+const attitude_lpf_cutoff_freq: float = 15.0
+const attitude_lpf_enable: bool = false
+const attitude_lpf_rate_cutoff_freq: float = 30.0
+const attitude_lpf_rate_enable: bool = false
+
+const rate_1000_hz: float = 1000.0
+const rate_500_hz: float = 500.0
+const rate_250_hz: float = 250.0
+const rate_100_hz: float = 100.0
+const rate_50_hz: float = 50.0
+const rate_25_hz: float = 25.0
+
+const rate_main_loop: float = rate_1000_hz
+const attitude_rate: float = rate_500_hz
+const position_rate: float = rate_100_hz
+const rate_hl_commander: float = rate_100_hz
+
+const attitude_update_rate: float = rate_500_hz
+const attitude_update_dt: float = 1.0 /. attitude_update_rate
+
+const pos_update_rate: float = rate_100_hz
+const pos_update_dt: float = 1.0 /. pos_update_rate
+
+const pos_filt_enable: bool = true
+const vel_filt_enable: bool = true
+const pos_filt_cutoff: float = 20.0
+const vel_filt_cutoff: float = 20.0
+const posz_filt_enable: bool = true
+const velz_filt_enable: bool = true
+const posz_filt_cutoff: float = 20.0
+const velz_filt_cutoff: float = 20.0
+
+(* Libel__pid_params_25_0000001_0000000_0000000_010000100_00000020_000000truetruetrue5000_00000022_000000__step *)
+const pid_vx_kp: float = 25.0
+const pid_vx_ki: float = 1.0
+const pid_vx_kd: float = 0.0
+const pid_vx_dt: float = pos_update_dt
+
+(* Libel__pid_params_25_0000001_0000000_0000000_010000100_00000020_000000truetruetrue5000_00000022_000000__step *)
+const pid_vy_kp: float = 25.0
+const pid_vy_ki: float = 1.0
+const pid_vy_kd: float = 0.0
+const pid_vy_dt: float = pos_update_dt
+
+(* Libel__pid_params_25_00000015_0000000_0000000_010000100_00000020_000000truetruetrue5000_00000032_767500__step *)
+const pid_vz_kp: float = 25.0
+const pid_vz_ki: float = 15.0
+const pid_vz_kd: float = 0.0
+const pid_vz_dt: float = pos_update_dt
+
+(* Libel__pid_params_2_0000000_0000000_0000000_010000100_00000020_000000truetruefalse5000_0000000_000000__step *)
+const pid_x_kp: float = 2.0
+const pid_x_ki: float = 0.0
+const pid_x_kd: float = 0.0
+const pid_x_dt: float = pos_update_dt
+
+(* Libel__pid_params_2_0000000_0000000_0000000_010000100_00000020_000000truetruefalse5000_0000000_000000__step *)
+const pid_y_kp: float = 2.0
+const pid_y_ki: float = 0.0
+const pid_y_kd: float = 0.0
+const pid_y_dt: float = pos_update_dt
+
+(* Libel__pid_params_2_0000000_5000000_0000000_010000100_00000020_000000truetruefalse5000_0000000_000000__step *)
+const pid_z_kp: float = 2.0
+const pid_z_ki: float = 0.5
+const pid_z_kd: float = 0.0
+const pid_z_dt: float = pos_update_dt
+
+
+(* Libel__constrain_params__5000_0000005000_000000__step *)
+const default_pid_integration_limit: float = 5000.0
+const default_pid_integration_lim: bool = true
+(* Libel__constrain_params__0_0000000_000000__step *)
+const default_pid_output_limit: float = 0.0
+const default_pid_output_lim: bool = false
+
+
+const thrust_base: float = 36000.0
+(* Libel__constrain_params_20000_00000065535_000000__step *)
+const thrust_min: float = 20000.0
+(* Libel__constrain_params__20_00000020_000000__step *)
+const rollLimit : float = 20.0
+const pitchLimit : float = 20.0
+const rpLimitOverhead : float = 1.10
+
+const xVelMax : float = 1.0
+const yVelMax : float = 1.0
+const zVelMax : float = 1.0
+const velMaxOverhead : float = 1.10
+
+const thrustScale : float = 1000.0
+
+const pi: float = 3.14159265358979323846
+
+const max_uint16 : int = 0xffff
+const max_int16 : int = 0x7fff
+const max_uint16_f : float = 65535.0
+
+fun lpf2pSetCutoffFreq(sample_freq, cutoff_freq: float) returns (b0, b1, b2, a1, a2: float)
+var fr, ohm, c: float;
+let
+    fr = sample_freq /. cutoff_freq;
+    ohm = tan( pi /. fr );
+    c = 1.0 +. 2.0 *. cos( pi /. 4.0 ) *. ohm +. ohm *. ohm;
+    b0 = ohm *. ohm /. c;
+    b1 = 2.0 *. b0;
+    b2 = b0;
+    a1 = 2.0 *. ( ohm *. ohm -. 1.0) /. c;
+    a2 = ( 1.0 -. 2.0 *. cos( pi /. 4.0 ) *. ohm +. ohm *. ohm ) /. c;
+tel
+
+
+
+node constrain<<min, max : float>>(input : float) returns (output : float)
+let
+    output = 
+        if input <. min then 
+            min 
+        else if input >. max then
+            max
+        else
+            input;
+tel
+
+node opt_constrain<<limit : float>>(input : float) returns (output : float)
+var lim : bool;
+let
+    lim = round(limit) <> 0;
+    output = 
+        if lim then constrain<< -. limit, limit>>(input)
+        else input;
+tel
+
+node lpf2p<<samplingRate, cutoffFreq : float; enableDFilter : bool>>(sample : float) returns (output : float)
+var out_filter, delay_0, delay_1, delay_2 : float;
+    b0, b1, b2, a1, a2: float;
+let
+    (b0, b1, b2, a1, a2) = lpf2pSetCutoffFreq(samplingRate, cutoffFreq);
+
+    delay_0 = sample -. delay_1 *. a1 -. delay_2 *. a2;
+    out_filter = delay_0 *. b0 +. delay_1 *. b1 +. delay_2 *. b2;
+    delay_1 = 0.0 fby delay_0;
+    delay_2 = 0.0 fby delay_1;
+
+    output = if enableDFilter then out_filter else sample;
+tel
+
+node pid_err<<kp, ki, kd, dt, samplingRate, cutoffFreq : float;
+            enableDFilter : bool;
+            iLimit, oLimit: float>>(err: float) returns (output : float)
+var prev_err, integ : float; (* PID memory *)
+    deriv : float;
+let
+    prev_err = 0.0 fby err;
+    integ = opt_constrain<<iLimit>>(0.0 fby integ +. err *. dt);
+    deriv = lpf2p<<samplingRate, cutoffFreq, enableDFilter>>((err -. prev_err) /. dt);
+
+    output = opt_constrain<<oLimit>>(kp *. err +. ki *. integ +. kd *. deriv);
+tel
+
+node pid<<kp, ki, kd, dt, samplingRate, cutoffFreq : float;
+            enableDFilter : bool;
+            iLimit, oLimit: float>>(desired, measured : float) returns (output : float)
+let
+    output = pid_err<<kp, ki, kd, dt, samplingRate, cutoffFreq,
+                      enableDFilter,
+                      iLimit, oLimit>>(desired -. measured);
+tel
+
+(** Data structures *)
+
+type vec3 = {
+     x : float;
+     y : float;
+     z : float
+}
+
+type attitude = {
+     roll : float;
+     pitch : float;
+     yaw : float
+}
+
+
+
+type stab_mode = Disable | Abs | Velocity
+
+type mode = {
+     mx : stab_mode;
+     my : stab_mode;
+     mz : stab_mode;
+     mroll : stab_mode;
+     mpitch : stab_mode;
+     myaw : stab_mode;
+     mquat : stab_mode
+}
+
+type baro = {
+     pressure : float;
+     temperature : float;
+     asl : float
+}
+
+type sensor_data = {
+     acc : vec3;
+     gyro : vec3;
+     mag : vec3;
+     baro : baro
+}
+
+type setpoint = {
+     attitude : attitude;
+     attitude_rate : attitude;
+     attitude_quat : Mathext.quaternion;
+     thrust : float;
+     position : vec3;
+     velocity : vec3;
+     acceleration : vec3;
+     velocity_body : bool;
+     mode : mode
+}
+
+type state_t = {
+     st_attitude : attitude;
+     st_attitude_quat : Mathext.quaternion;
+     st_position : vec3;
+     st_velocity : vec3;
+     st_acc : vec3
+}
+
+type control = {
+    c_roll    : int;
+    c_pitch   : int;
+    c_yaw     : int;
+    c_thrust  : float
+}
+
+(* Position Controller *)
+
+node everyn<<n : int>>() returns (v : bool);
+var x : int;
+let
+  x = 0 fby ((x + 1) % n);
+  v = (x = 0);
+tel
+
+node cap_angle(x : float)
+returns (y : float)
+let
+  y = if x >. 180.0 then fmod(x, 360.0) -. 360.0
+      else if x <. -.180.0 then fmod(x, 360.0) +. 360.0
+      else x
+tel
+
+node velocity_controller(velocity : vec3; st : state_t) returns (thrust, pitch, roll : float)
+var cosyaw, sinyaw, state_body_vx, state_body_vy, thrustRaw : float;
+let
+    cosyaw = cos(st.st_attitude.yaw *. pi /. 180.0);
+    sinyaw = sin(st.st_attitude.yaw *. pi /. 180.0);
+
+    state_body_vx = st.st_velocity.x *. cosyaw +. st.st_velocity.y *. sinyaw;
+    state_body_vy = -. st.st_velocity.x *. sinyaw +. st.st_velocity.y *. cosyaw;
+
+    pitch =
+    constrain<<  -. pitchLimit, pitchLimit>>(
+        -.pid<<pid_vx_kp, pid_vx_ki, pid_vx_kd, pos_update_dt,
+             position_rate, vel_filt_cutoff, vel_filt_enable,
+             default_pid_integration_limit, pitchLimit *. rpLimitOverhead>>
+             (velocity.x, state_body_vx)
+    );
+
+    roll =
+    constrain<< -. rollLimit, rollLimit>>(
+        -.pid<<pid_vy_kp, pid_vy_ki, pid_vy_kd, pos_update_dt,
+             position_rate, vel_filt_cutoff, vel_filt_enable,
+             default_pid_integration_limit, rollLimit *. rpLimitOverhead>>
+             (velocity.y, state_body_vy)
+    );
+
+    thrustRaw =
+    pid<<pid_vz_kp, pid_vz_ki, pid_vz_kd, pos_update_dt,
+                     position_rate, velz_filt_cutoff, velz_filt_enable,
+                     default_pid_integration_limit, max_uint16_f /. 2.0 /. thrustScale>>
+                (velocity.z, st.st_velocity.z);
+
+    thrust =
+    constrain<<thrust_min, max_uint16_f>>(thrustRaw *. thrustScale +. thrust_base);
+tel
+
+node position_controller(setpoint: setpoint; st : state_t)
+returns (thrust, pitch, roll: float)
+var cosyaw, sinyaw, setp_body_x, setp_body_y, state_body_x, state_body_y: float;
+    velocity : vec3;
+let
+    cosyaw = cos(st.st_attitude.yaw *. pi /. 180.0);
+    sinyaw = sin(st.st_attitude.yaw *. pi /. 180.0);
+
+    setp_body_x = setpoint.position.x *. cosyaw +. setpoint.position.y *. sinyaw;
+    setp_body_y = -. setpoint.position.x *. sinyaw +. setpoint.position.y *. cosyaw;
+
+    state_body_x = st.st_position.x *. cosyaw +. st.st_position.y *. sinyaw;
+    state_body_y = -. st.st_position.x *. sinyaw +. st.st_position.y *. cosyaw;
+
+    velocity = {
+        x =
+            if setpoint.mode.mx = Abs then
+                pid<<pid_x_kp, pid_x_ki, pid_x_kd, pos_update_dt,
+                    position_rate, pos_filt_cutoff, pos_filt_enable,
+                    default_pid_integration_limit, xVelMax *. velMaxOverhead>>
+                (setp_body_x, state_body_x)
+            else if not setpoint.velocity_body then
+                setpoint.velocity.x *. cosyaw +. setpoint.velocity.y *. sinyaw
+            else
+                setpoint.velocity.x
+            ;
+
+        y =
+            if setpoint.mode.my = Abs then
+                pid<<pid_y_kp, pid_y_ki, pid_y_kd, pos_update_dt,
+                    position_rate, pos_filt_cutoff, pos_filt_enable,
+                    default_pid_integration_limit, yVelMax *. velMaxOverhead>>
+                (setp_body_y, state_body_y)
+            else if not setpoint.velocity_body then
+                setpoint.velocity.y *. cosyaw -. setpoint.velocity.x *. sinyaw
+            else
+                setpoint.velocity.y
+            ;
+
+        z =
+            if setpoint.mode.mz = Abs then
+                pid<<pid_z_kp, pid_z_ki, pid_z_kd, pos_update_dt,
+                    position_rate, posz_filt_cutoff, posz_filt_enable,
+                    default_pid_integration_limit, zVelMax *. velMaxOverhead>>
+                (setpoint.position.z, st.st_position.z)
+            else
+                setpoint.velocity.z
+    };
+
+    (thrust, pitch, roll) = velocity_controller(velocity, st);
+tel
+
+(** Attitude Controller *)
+
+node attitudeControllerCorrectAttitudePID
+    (eulerRollActual, eulerPitchActual, eulerYawActual,
+     eulerRollDesired, eulerPitchDesired, eulerYawDesired : float;
+     setpoint : setpoint)
+    returns (rollRateDesired, pitchRateDesired, yawRateDesired : float);
+var yaw_err, real_yaw_err, rollRateDesired_pid, pitchRateDesired_pid : float;
+    resetRoll, resetPitch : bool;
+let
+    resetRoll = setpoint.mode.mroll = Velocity;
+    resetPitch = setpoint.mode.mpitch = Velocity;
+
+    yaw_err = eulerYawDesired -. eulerYawActual;
+    real_yaw_err = cap_angle(yaw_err);
+
+    reset
+        rollRateDesired_pid = 
+            pid<<pid_roll_kp, pid_roll_ki, pid_roll_kd,
+                 attitude_update_dt, attitude_rate, attitude_lpf_cutoff_freq,
+                 attitude_lpf_enable,
+                 pid_roll_integration_limit, 0.0>>(eulerRollDesired, eulerRollActual)
+    every resetRoll;
+
+    reset
+        pitchRateDesired_pid =
+            pid<<pid_pitch_kp, pid_pitch_ki, pid_pitch_kd,
+                 attitude_update_dt, attitude_rate, attitude_lpf_cutoff_freq,
+                 attitude_lpf_enable,
+                 pid_pitch_integration_limit, 0.0>>(eulerPitchDesired, eulerPitchActual)
+    every resetPitch;
+
+    rollRateDesired = 
+        if resetRoll then
+            setpoint.attitude_rate.roll
+        else
+            rollRateDesired_pid;
+
+    pitchRateDesired =
+        if resetPitch then
+            setpoint.attitude_rate.pitch
+        else
+            pitchRateDesired_pid;
+
+
+    yawRateDesired =
+        pid_err<<pid_yaw_kp, pid_yaw_ki, pid_yaw_kd,
+                 attitude_update_dt, attitude_rate, attitude_lpf_cutoff_freq,
+                 attitude_lpf_enable,
+                 pid_yaw_integration_limit, 0.0>>
+                 (real_yaw_err);
+tel
+
+node saturate_int16(xf : float) returns (y : int)
+var x : int;
+let
+    x = round(floor(xf));
+    y = if x > max_int16 then max_int16
+        else if x < -max_int16 then -max_int16 else x
+tel
+
+node attitudeControllerCorrectRatePID
+    (rollRateActual, pitchRateActual, yawRateActual,
+     rollRateDesired, pitchRateDesired, yawRateDesired : float)
+    returns (rollOutput, pitchOutput, yawOutput : int);
+var rollOutput_float, pitchOutput_float, yawOutput_float : float;
+let
+    rollOutput_float =
+        pid<<pid_roll_rate_kp, pid_roll_rate_ki, pid_roll_rate_kd,
+             attitude_update_dt, attitude_rate, attitude_lpf_rate_cutoff_freq,
+             attitude_lpf_rate_enable,
+             pid_roll_rate_integration_limit, 0.0>>(rollRateDesired, rollRateActual);
+
+    pitchOutput_float =
+        pid<<pid_pitch_rate_kp, pid_pitch_rate_ki, pid_pitch_rate_kd,
+             attitude_update_dt, attitude_rate, attitude_lpf_rate_cutoff_freq,
+             attitude_lpf_rate_enable,
+             pid_pitch_rate_integration_limit, 0.0>>(pitchRateDesired, pitchRateActual);
+
+    yawOutput_float =
+        pid<<pid_yaw_rate_kp, pid_yaw_rate_ki, pid_yaw_rate_kd,
+             attitude_update_dt, attitude_rate, attitude_lpf_rate_cutoff_freq,
+             attitude_lpf_rate_enable,
+             pid_yaw_rate_integration_limit, 0.0>>(yawRateDesired, yawRateActual);
+
+    rollOutput  = saturate_int16(rollOutput_float);
+    pitchOutput = saturate_int16(pitchOutput_float);
+    yawOutput   = - saturate_int16(yawOutput_float);
+tel
+
+node attitudeController(attitudeDesired : attitude;
+                        st : state_t;
+                        sensors : sensor_data;
+                        setpoint : setpoint)
+    returns (roll, pitch, yaw : int);
+var rollRateDesired, pitchRateDesired, yawRateDesired : float;
+let
+    (rollRateDesired, pitchRateDesired, yawRateDesired) = 
+        attitudeControllerCorrectAttitudePID(
+            st.st_attitude.roll, st.st_attitude.pitch, st.st_attitude.yaw,
+            attitudeDesired.roll, attitudeDesired.pitch, attitudeDesired.yaw,
+            setpoint
+        );
+
+    (roll,pitch,yaw) = attitudeControllerCorrectRatePID(
+            sensors.gyro.x, -. sensors.gyro.y, sensors.gyro.z,
+            rollRateDesired, pitchRateDesired, yawRateDesired
+        );
+tel
+
+(* main cascaded pid controller that calls sub-controllers *)
+
+node controller_pid (sensors: sensor_data; st: state_t; setpoint: setpoint)
+returns (control: control);
+var freq_attitude, freq_position: bool;
+    last cap_yaw: float = 0.0;
+    last roll_pos_d: float = 0.0; last pitch_pos_d: float = 0.0; last thrust_pos_d: float = 0.0;
+    last attitude_desired: attitude = {roll=0.0; pitch=0.0; yaw=0.0}; last actuator_thrust: float = 0.0;
+    last roll_d: int = 0; last yaw_d: int = 0; last pitch_d: int = 0;
+    last control_d: control = {c_roll=0; c_pitch = 0; c_yaw = 0; c_thrust = 0.0};
+let
+    freq_attitude = everyn<<2>>();
+    freq_position = everyn<<10>>();
+
+    switch freq_attitude
+    | true do cap_yaw =
+        if setpoint.mode.myaw = Velocity
+        then cap_angle((last attitude_desired).yaw +. setpoint.attitude_rate.yaw *. attitude_update_dt)
+        else cap_angle(setpoint.attitude.yaw)
+    | false do cap_yaw = (last attitude_desired).yaw;
+    end;
+
+    switch freq_position
+    | true do
+        reset
+            (thrust_pos_d, pitch_pos_d, roll_pos_d) = position_controller(setpoint, st);
+        every (false fby (control.c_thrust = 0.0));
+    | false do
+        thrust_pos_d = last actuator_thrust;
+        pitch_pos_d = (last attitude_desired).pitch;
+        roll_pos_d = (last attitude_desired).roll;
+    end;
+
+    switch freq_attitude
+    | true do
+        actuator_thrust = if (setpoint.mode.mz = Disable) then setpoint.thrust 
+                          else thrust_pos_d;
+        switch (setpoint.mode.mx = Disable or setpoint.mode.my = Disable)
+        | true do attitude_desired = { setpoint.attitude with .yaw = cap_yaw }
+        | false do attitude_desired = { pitch = pitch_pos_d; roll = roll_pos_d; yaw = cap_yaw }
+        end;
+
+        reset
+            (roll_d, pitch_d, yaw_d) = attitudeController( attitude_desired, st, sensors, setpoint);
+        every (false fby (control.c_thrust = 0.0));
+        control_d = {c_roll = roll_d; c_pitch = pitch_d; c_yaw = yaw_d; c_thrust = actuator_thrust}
+    | false do
+        actuator_thrust = thrust_pos_d;
+    end;
+
+    switch (control_d.c_thrust = 0.0)
+    | true do control = {c_roll = 0; c_pitch = 0; c_yaw = 0; c_thrust = 0.0}
+    | false do control = control_d
+    end;
+tel
+
+
+(** Power distribution *)
+
+fun limitUint16(i : int) returns (o : int)
+let
+    o = if i > max_uint16 then max_uint16
+        else if i < 0 then 0 else i;
+tel
+
+const idle_thrust : int = 0
+
+fun min_idle(i : int) returns (o : int)
+let
+    o = if i < idle_thrust then idle_thrust else i;
+tel
+
+fun power_distribution(thrust : float; roll, pitch, yaw : int)
+returns (m1, m2, m3, m4 : int)
+var r, p, t : int;
+let
+    r = roll / 2;
+    p = pitch / 2;
+    t = round(thrust);
+    m1 = min_idle(limitUint16(t - r + p + yaw));
+    m2 = min_idle(limitUint16(t - r - p - yaw));
+    m3 = min_idle(limitUint16(t + r - p + yaw));
+    m4 = min_idle(limitUint16(t + r + p - yaw));
+tel
+
+
+
+(* ------------------------------------------------------------------------------------------------------ *)
+
+(* State Estimator *)
+
+(* Constants *)
+
+const attitude_update_rate_estimator: float = rate_250_hz
+const attitude_update_dt_estimator: float = 1.0 /. attitude_update_rate_estimator
+const position_update_rate: float = rate_100_hz
+const position_update_dt: float = 1.0 /. position_update_rate
+
+const pi_f : float = 3.14159265358979
+const twoKp : float = 2.0 *. 0.4
+const twoKi : float = 2.0 *. 0.001
+const grav_const : float = 9.81
+const max_sample_age: int = 50
+
+(* selfstate variables that remain constant *)
+const vAccDeadband: float = 0.04
+const velZalpha: float = 0.995
+const estAlphaZrange: float = 0.90
+const estAlphaAsl: float = 0.90
+const velocityFactor: float = 1.0
+
+(* ------------------------------------------------------------------------------- *)
+(* Data structures *)
+
+type tof = {
+    timestamp : int;
+    distance : float;
+    stdDev   : float
+}
+
+type flow = {
+    timestamp2: int;
+    dpixelx: float;
+    dpixely: float;
+    std_dev_x: float;
+    std_dev_y: float;
+    dt: float
+}
+
+type sensor_data_est = {
+    acc_est : vec3;
+    gyro_est : vec3;
+    tof : tof;
+    baro_est : baro
+}
+
+(* ------------------------------------------------------------------------------- *)
+(* miscelaneous functions *)
+
+fun normalize(acc: vec3) returns (acc_norm: vec3);
+var recipNorm : float;
+let
+    recipNorm = invSqrt((acc.x *. acc.x) +. (acc.y *. acc.y) +. (acc.z *. acc.z));
+    acc_norm = {x = acc.x *. recipNorm;
+                y = acc.y *. recipNorm;
+                z = acc.z *. recipNorm};
+tel
+
+fun normalize_quat(q: Mathext.quaternion) returns (q_norm: Mathext.quaternion);
+var recipNorm: float;
+let
+    recipNorm = invSqrt((q.qw *. q.qw) +. (q.qx *. q.qx) +. (q.qy *. q.qy) +. (q.qz *. q.qz));
+    q_norm = {qx = q.qx *. recipNorm;
+              qy = q.qy *. recipNorm;
+              qz = q.qz *. recipNorm;
+              qw = q.qw *. recipNorm};
+tel
+
+(* Estimated direction of gyro and vector perpendicular to magnetic flux *)
+(* Error is sum of cross product between estimated and measured direction of gyro *)
+fun getEstimatedGyroAndMagError(q: Mathext.quaternion; acc_1: vec3)
+returns (halfe: vec3);
+var halfvx, halfvy, halfvz : float;
+let
+    halfvx = (q.qx *. q.qz) -. (q.qw *. q.qy);
+    halfvy = (q.qw *. q.qx) +. (q.qy *. q.qz);
+    halfvz = (q.qw *. q.qw) -. 0.5 +. (q.qz *. q.qz);
+    halfe = {x = ((acc_1.y *. halfvz) -. (acc_1.z *. halfvy));
+             y = ((acc_1.z *. halfvx) -. (acc_1.x *. halfvz));
+             z = ((acc_1.x *. halfvy) -. (acc_1.y *. halfvx))};
+tel
+
+(* Compute and apply integral feedback *)
+node apply_integral_feedback(prev_gyro: vec3; halfe: vec3)
+returns (gyro: vec3);
+var dt : float;
+    last integralFBx: float = 0.0;
+    last integralFBy: float = 0.0;
+    last integralFBz: float = 0.0;
+let
+    dt = attitude_update_dt_estimator;
+    integralFBx = (last integralFBx) +. ((twoKi  *. dt) *. halfe.x);
+    integralFBy = (last integralFBy) +. ((twoKi  *. dt) *. halfe.y);
+    integralFBz = (last integralFBz) +. ((twoKi  *. dt) *. halfe.z);
+    gyro = {x = prev_gyro.x +. integralFBx;
+            y = prev_gyro.y +. integralFBy;
+            z = prev_gyro.z +. integralFBz};
+tel
+
+(* Integrate rate of change of quaternion *)
+fun integrateQuaternion(q: Mathext.quaternion; gyro: vec3)
+returns (q_new: Mathext.quaternion);
+var dt: float;
+    gx, gy, gz : float;
+    qa, qb, qc, qz : float;
+let
+    dt = attitude_update_dt_estimator;
+    gx = gyro.x *. (0.5 *. dt);
+    gy = gyro.y *. (0.5 *. dt);
+    gz = gyro.z *. (0.5 *. dt);
+    qa = q.qw;
+    qb = q.qx;
+    qc = q.qy;
+    qz = q.qz;
+    q_new = {qw = q.qw -. ((qb *. gx) +. (qc *. gy) +. (qz *. gz));
+             qx = q.qx +. ((qa *. gx) +. (qc *. gz) -. (qz *. gy));
+             qy = q.qy +. ((qa *. gy) -. (qb *. gz) +. (qz *. gx));
+             qz = q.qz +. ((qa *. gz) +. (qb *. gy) -. (qc *. gx))};
+tel
+
+fun deadband(value: float; threshold: float)
+returns (v: float);
+let
+    v = if fabs(value) <. threshold then 
+            0.0 
+        else if value >. 0.0 then 
+            value -. threshold 
+        else if value <. 0.0 then 
+            value +. threshold 
+        else 
+            value;
+tel
+
+(* ------------------------------------------------------------------------------- *)
+(* sensfusion6 *)
+
+node sensfusion6_update_QImpl(gyro: vec3; acc: vec3)
+returns (last q: Mathext.quaternion = {qw = 1.0; qx = 0.0; qy = 0.0; qz = 0.0});
+var gyro0 : vec3;
+    last acc_1 : vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last halfe : vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last gyro1 : vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last gyro2 : vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    q_temp : Mathext.quaternion;
+let
+    gyro0={ x = (gyro.x *. pi_f) /. 180.0;
+            y = (gyro.y *. pi_f) /. 180.0;
+            z = (gyro.z *. pi_f) /. 180.0};
+
+    switch (not ((acc.x = 0.0) and (acc.y = 0.0) and (acc.z = 0.0)))
+    | true do
+        acc_1 = normalize(acc);
+        halfe = getEstimatedGyroAndMagError(last q, acc_1);
+        gyro1 = apply_integral_feedback(gyro0, halfe);
+        gyro2 = { x = gyro1.x +. (twoKp *. halfe.x);
+                  y = gyro1.y +. (twoKp *. halfe.y);
+                  z = gyro1.z +. (twoKp *. halfe.z)};
+        q_temp = integrateQuaternion(last q, gyro2);
+    | false do
+        q_temp = integrateQuaternion(last q, gyro0);
+    end;
+
+    q = normalize_quat(q_temp);
+tel
+
+node sensfusion6_update_Q(gyro: vec3; acc: vec3)
+returns (q: Mathext.quaternion; grav: vec3; last baseZacc: float = 0.0);
+var last is_calibrated : bool = false;
+let
+    q = sensfusion6_update_QImpl(gyro, acc);
+    grav = {x = 2.0 *. ((q.qx *. q.qz) -. (q.qw *. q.qy));
+            y = 2.0 *. ((q.qw *. q.qx) +. (q.qy *. q.qz));
+            z = (q.qw *. q.qw) -. (q.qx *. q.qx) -. (q.qy *. q.qy) +. (q.qz *. q.qz)};
+
+    switch (not (last is_calibrated))
+    | true do
+        baseZacc = (acc.x *. grav.x) +. (acc.y *. grav.y) +. (acc.z *. grav.z);
+        is_calibrated = true;
+    | false do
+    end;
+tel
+
+fun sensfusion6_get_euler_rpy(q: Mathext.quaternion; grav: vec3)
+returns (attitude: attitude);
+var gx: float;
+let
+    gx = if (grav.x >. 1.0) then 1.0
+        else if (grav.x <. (-.1.0)) then (-.1.0)
+        else grav.x;
+    attitude = {yaw = atan2(2.0 *.((q.qw*.q.qz) +. (q.qx*.q.qy)), ((q.qw*.q.qw) +. (q.qx*.q.qx) -. (q.qy*.q.qy) -. (q.qz*.q.qz))) *. (180.0 /. pi_f);
+                pitch = (asin(gx) *. 180.0) /. pi_f;
+                roll = (atan2(grav.y, grav.z) *. 180.0) /. pi_f};
+tel
+
+(* ------------------------------------------------------------------------------- *)
+(* position estimate *)
+
+node position_update_velocity(accWz, init_velocityZ : float)
+returns (final_velocityZ: float);
+var dt, accWz1: float;
+let
+    dt = attitude_update_dt_estimator;
+    accWz1 = init_velocityZ +. deadband(accWz, vAccDeadband) *. dt *. grav_const;
+    final_velocityZ = accWz1 *. velZalpha;
+tel
+
+(* Improved_BARO_Z_HOLD macro not defined *)
+
+node positionEstimate(baro: baro; tof: tof; init_velocityZ: float;)
+returns (last position_z: float = 0.0; vel_z: float);
+var dt: float;
+    filteredZ: float;
+    isSampleUseful: bool;
+let
+    dt = position_update_dt;
+    isSampleUseful = ((xTaskGetTickCount() - tof.timestamp) <= max_sample_age);
+
+    switch (isSampleUseful)
+    | true do
+        filteredZ = (estAlphaZrange *. last position_z) +. ((1.0 -. estAlphaZrange) *. tof.distance);
+    | false do
+        filteredZ = if (last position_z = 0.0) then baro.asl
+                    else (estAlphaAsl *. last position_z) +. ((1.0 -. estAlphaAsl) *. baro.asl);
+    end;
+
+    position_z = filteredZ +. (velocityFactor *. init_velocityZ *. dt);
+    vel_z = (position_z -. (last position_z)) /. dt;
+tel
+
+(* ------------------------------------------------------------------------------- *)
+(* main state estimator *)
+
+node estimator_complementary(sensor: sensor_data_est)
+returns (st : state_t);
+var freq_att_update, freq_pos_update : bool;
+    last grav: vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last st_attitude_this: attitude = {roll = 0.0; pitch = 0.0; yaw = 0.0};
+    last st_attitude_quat_this: Mathext.quaternion = {qw = 1.0; qx = 0.0; qy = 0.0; qz = 0.0};
+    last st_acc_z: float = 0.0;
+    last baseZacc: float = 0.0;
+    last velocityZ: float = 0.0;
+    last st_position_z: float = 0.0;
+    last st_velocity_z: float = 0.0;
+let
+    freq_att_update = everyn<<4>>();
+    freq_pos_update = everyn<<10>>();
+
+    switch freq_att_update
+    | true do
+        (st_attitude_quat_this, grav, baseZacc) = sensfusion6_update_Q(sensor.gyro_est, sensor.acc_est);
+        st_attitude_this = sensfusion6_get_euler_rpy(st_attitude_quat_this, grav);
+        st_acc_z =  (  (sensor.acc_est.x *. grav.x) 
+                    +. (sensor.acc_est.y *. grav.y) 
+                    +. (sensor.acc_est.z *. grav.z)
+                    ) -. baseZacc;
+        velocityZ = position_update_velocity(st_acc_z, last velocityZ);
+    | false do
+    end;
+
+    switch freq_pos_update
+    | true do
+        (st_position_z, st_velocity_z) = 
+            positionEstimate(sensor.baro_est, sensor.tof, velocityZ);
+    | false do
+    end;
+
+    st = {  st_attitude = st_attitude_this;
+            st_attitude_quat = st_attitude_quat_this;
+            st_position = {x = 0.0; y = 0.0; z = st_position_z};
+            st_velocity = {x = 0.0; y = 0.0; z = st_velocity_z};
+            st_acc = {x = 0.0; y = 0.0; z = st_acc_z}};
+tel
+
+(* ---------------------------------------------------------------------------------------- *)
+(* Estimator and controller combined *)
+
+type sensor_combined = {
+    gyro_c: vec3;
+    acc_c: vec3;
+    mag_c: vec3;
+    baro_c: baro;
+    tof_c: tof
+}
+
+node combined_estimator_controller(sensors: sensor_combined; setpoint: setpoint)
+returns (st: state_t; control: control);
+let
+    st = estimator_complementary({  gyro_est = sensors.gyro_c;
+                                        acc_est = sensors.acc_c;
+                                        baro_est = sensors.baro_c;
+                                        tof = sensors.tof_c
+                                    });
+    control = controller_pid({  acc = sensors.acc_c;
+                                gyro = sensors.gyro_c;
+                                mag = sensors.mag_c;
+                                baro = sensors.baro_c
+                            },
+                                st,
+                                setpoint);
+tel
+
+(* ---------------------------------------------------------------------------------------- *)
+(* Kalman Estimator *)
+
+(* data types and constants *)
+
+const max_position: float = 100.0
+const max_velocity: float = 10.0
+const max_covariance: float = 100.0
+const min_covariance: float = 0.000001
+
+const predict_rate: int = 100
+const deg_to_rad: float = pi_f /. 180.0
+const rad_to_deg: float = 180.0 /. pi_f
+const gravity_magnitude: float = 9.81
+const eps: float = 0.000001
+const rollpitch_zero_reversion: float = 0.001
+
+type outlier_filter_lh_state_t = {
+    openingTime: int;
+    openingWindow: int
+}
+
+(* const kc_state_x: int = 0
+const kc_state_y: int = 1
+const kc_state_z: int = 2
+const kc_state_px: int = 3
+const kc_state_py: int = 4
+const kc_state_pz: int = 5
+const kc_state_d0: int = 6
+const kc_state_d1: int = 7
+const kc_state_d2: int = 8
+const kc_state_dim: int = 9 *)
+
+
+type kalman_core_params = {
+    std_dev_initial_position_xy: float;
+    std_dev_initial_position_z: float;
+    std_dev_initial_velocity: float;
+    std_dev_initial_attitude_rollpitch: float;
+    std_dev_initial_attitude_yaw: float;
+
+    proc_noise_acc_xy: float;
+    proc_noise_acc_z: float;
+    proc_noise_vel: float;
+    proc_noise_pos: float;
+    proc_noise_att: float;
+    proc_noise_baro: float;
+    proc_noise_gyro_rollpitch: float;
+    proc_noise_gyro_yaw: float;
+
+    initial_x: float;
+    initial_y: float;
+    initial_z: float;
+    initial_yaw: float
+}
+
+const params: kalman_core_params = {
+    std_dev_initial_position_xy = 100.0;
+    std_dev_initial_position_z = 1.0;
+    std_dev_initial_velocity = 0.01;
+    std_dev_initial_attitude_rollpitch = 0.01;
+    std_dev_initial_attitude_yaw = 0.01;
+
+    proc_noise_acc_xy = 0.5;
+    proc_noise_acc_z = 1.0;
+    proc_noise_vel = 0.0;
+    proc_noise_pos = 0.0;
+    proc_noise_att = 0.0;
+    proc_noise_baro = 2.0;
+    proc_noise_gyro_rollpitch = 0.1;
+    proc_noise_gyro_yaw = 0.1;
+
+    initial_x = 0.0;
+    initial_y = 0.0;
+    initial_z = 0.0;
+    initial_yaw = 0.0
+}
+
+const null_matrix: Mathext.covariance_matrix = {
+    kc_state_X = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_Y = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_Z = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_PX = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_PY = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_PZ = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_D0 = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_D1 = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 };
+    kc_state_D2 = {kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0 }
+}
+
+const null_quadrocopter_state: Mathext.quadrocopter_state = {
+    kc_state_x = 0.0;
+    kc_state_y = 0.0;
+    kc_state_z = 0.0;
+    kc_state_px = 0.0;
+    kc_state_py = 0.0;
+    kc_state_pz = 0.0;
+    kc_state_d0 = 0.0;
+    kc_state_d1 = 0.0;
+    kc_state_d2 = 0.0
+}
+
+const init_vec3: vec3 = {x = 0.0; y = 0.0; z = 0.0}
+
+const init_core_data: Mathext.kalman_coredata_t = {
+    s = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+    q = { qx = 0.0; qy = 0.0; qz = 0.0; qw = 1.0};
+    r = [ [1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+    p = { 
+        kc_state_X = { kc_state_x = 10000.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_Y = { kc_state_x = 0.0; kc_state_y = 10000.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_Z = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 1.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_PX = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0001; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_PY = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0001; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_PZ = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0001; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_D0 = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0001; kc_state_d1 = 0.0; kc_state_d2 = 0.0};
+        kc_state_D1 = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0001; kc_state_d2 = 0.0};
+        kc_state_D2 = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0001}
+    };
+    initial_quaternion = { qx = 0.0; qy = 0.0; qz = 0.0; qw = 1.0}
+}
+
+(* secondary functions *)
+
+node attitude_err_from_attitude_err(d0, d1, d2: float)
+returns (d0_q, d1_q, d2_q: Mathext.quadrocopter_state);
+let
+    d0_q = {  kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0; 
+            kc_state_d0 = (1.0 -. ((d1*.d1)/.2.0) -. ((d2*.d2)/.2.0));
+            kc_state_d1 = (d2 +. ((d0*.d1)/.2.0));
+            kc_state_d2 = (-.d1 +. ((d0*.d2)/.2.0))};
+
+    d1_q = {  kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0;
+            kc_state_d0 = (-.d2 +. ((d0*.d1)/.2.0));
+            kc_state_d1 = (1.0 -. ((d0*.d0)/.2.0) -. ((d2*.d2)/.2.0));
+            kc_state_d2 = (d0 +. ((d1*.d2)/.2.0))};
+
+    d2_q = {  kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0; kc_state_px = 0.0; kc_state_py = 0.0; kc_state_pz = 0.0;
+            kc_state_d0 = (d1 +. ((d0*.d2)/.2.0));
+            kc_state_d1 = (-.d0 +. ((d1*.d2)/.2.0));
+            kc_state_d2 = (1.0 -. ((d0*.d0)/.2.0) -. ((d1*.d1)/.2.0))};
+tel
+
+node linearize(r: float^3^3; s: Mathext.quadrocopter_state; gyro: vec3; dt: float)
+returns (am: Mathext.covariance_matrix);
+var d0, d1, d2: float;
+    d0_q, d1_q, d2_q: Mathext.quadrocopter_state;
+let
+    d0 = (gyro.x*.dt)/.2.0;
+    d1 = (gyro.y*.dt)/.2.0;
+    d2 = (gyro.z*.dt)/.2.0;
+
+    (d0_q, d1_q, d2_q) = attitude_err_from_attitude_err(d0, d1, d2);
+
+    am = {
+        kc_state_X = { kc_state_x = 1.0; kc_state_y = 0.0; kc_state_z = 0.0;
+                    kc_state_px = r[0][0] *. dt; 
+                    kc_state_py = r[0][1] *. dt;
+                    kc_state_pz = r[0][2] *. dt;
+                    kc_state_d0 = (s.kc_state_py*.r[0][2] -. s.kc_state_pz*.r[0][1]) *. dt;
+                    kc_state_d1 = (s.kc_state_px*.r[0][2] +. s.kc_state_pz*.r[0][0]) *. dt;
+                    kc_state_d2 = (s.kc_state_px*.r[0][1] -. s.kc_state_py*.r[0][0]) *. dt};
+
+        kc_state_Y = { kc_state_x = 0.0; kc_state_y = 1.0; kc_state_z = 0.0;
+                    kc_state_px = r[1][0] *. dt; 
+                    kc_state_py = r[1][1] *. dt;
+                    kc_state_pz = r[1][2] *. dt;
+                    kc_state_d0 = (s.kc_state_py*.r[1][2] -. s.kc_state_pz*.r[1][1]) *. dt;
+                    kc_state_d1 = (s.kc_state_px*.r[1][2] +. s.kc_state_pz*.r[1][0]) *. dt;
+                    kc_state_d2 = (s.kc_state_px*.r[1][1] -. s.kc_state_py*.r[1][0]) *. dt};
+
+        kc_state_Z = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 1.0;
+                    kc_state_px = r[2][0] *. dt; 
+                    kc_state_py = r[2][1] *. dt;
+                    kc_state_pz = r[2][2] *. dt;
+                    kc_state_d0 = (s.kc_state_py*.r[2][2] -. s.kc_state_pz*.r[2][1]) *. dt;
+                    kc_state_d1 = (s.kc_state_px*.r[2][2] +. s.kc_state_pz*.r[2][0]) *. dt;
+                    kc_state_d2 = (s.kc_state_px*.r[2][1] -. s.kc_state_py*.r[2][0]) *. dt};
+
+        kc_state_PX = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0;
+                    kc_state_px = 1.0; 
+                    kc_state_py = gyro.z*.dt;
+                    kc_state_pz = -.gyro.y*.dt;
+                    kc_state_d0 = 0.0;
+                    kc_state_d1 = gravity_magnitude*.r[2][2]*.dt;
+                    kc_state_d2 = -.gravity_magnitude*.r[2][1]*.dt};
+
+        kc_state_PY = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0;
+                    kc_state_px = -.gyro.z*.dt; 
+                    kc_state_py = 1.0;
+                    kc_state_pz = gyro.x*.dt;
+                    kc_state_d0 = -.gravity_magnitude*.r[2][2]*.dt;
+                    kc_state_d1 = 0.0;
+                    kc_state_d2 = gravity_magnitude*.r[2][0]*.dt};
+
+        kc_state_PZ = { kc_state_x = 0.0; kc_state_y = 0.0; kc_state_z = 0.0;
+                    kc_state_px = gyro.y*.dt; 
+                    kc_state_py = -.gyro.x*.dt;
+                    kc_state_pz = 1.0;
+                    kc_state_d0 = gravity_magnitude*.r[2][1]*.dt;
+                    kc_state_d1 = -.gravity_magnitude*.r[2][0]*.dt;
+                    kc_state_d2 = 0.0};
+
+        kc_state_D0 = d0_q;
+        kc_state_D1 = d1_q;
+        kc_state_D2 = d2_q
+    }
+tel
+
+node prediction_step(s: Mathext.quadrocopter_state; r: float^3^3; 
+                    q, initial_q: Mathext.quaternion; 
+                    quad_is_flying: bool;
+                    acc, gyro: vec3; dt: float)
+returns (s_updated: Mathext.quadrocopter_state; q_updated: Mathext.quaternion);
+var dt2, norm: float;
+    dx, dy, dz: float;
+    tmpSPX, tmpSPY, tmpSPZ: float;
+    dtwx, dtwy, dtwz: float;
+    angle, ca, sa: float;
+    dq: float^4;
+    tmpq0, tmpq1, tmpq2, tmpq3: float;
+    last keep: float = 0.0;
+    last tmpq0_1: float = 0.0;
+    last tmpq1_1: float = 0.0;
+    last tmpq2_1: float = 0.0;
+    last tmpq3_1: float = 0.0;
+let
+    dt2 = dt *. dt;
+    tmpSPX = s.kc_state_px;
+    tmpSPY = s.kc_state_py;
+    tmpSPZ = s.kc_state_pz;
+
+    switch quad_is_flying
+    | true do
+        dx = s.kc_state_px *. dt;
+        dy = s.kc_state_py *. dt;
+        dz = (s.kc_state_pz *. dt) +. (acc.z *. dt2 /. 2.0);
+
+        s_updated = {
+            kc_state_x = s.kc_state_x +. (r[0][0] *. dx) +. (r[0][1] *. dy) +. (r[0][2] *. dz);
+            kc_state_y = s.kc_state_y +. (r[1][0] *. dx) +. (r[1][1] *. dy) +. (r[1][2] *. dz);
+            kc_state_z = s.kc_state_z +. (r[2][0] *. dx) +. (r[2][1] *. dy) +. (r[2][2] *. dz) -. (gravity_magnitude *. dt2 /. 2.0);
+            kc_state_px = s.kc_state_px +. dt*.(gyro.z *. tmpSPY -. gyro.y *. tmpSPZ -. gravity_magnitude *. r[2][0]);
+            kc_state_py = s.kc_state_py +. dt*.(-.gyro.z *. tmpSPX +. gyro.x *. tmpSPZ -. gravity_magnitude *. r[2][1]);
+            kc_state_pz = s.kc_state_pz +. dt*.(acc.z +. gyro.y *. tmpSPX -. gyro.x *. tmpSPY -. gravity_magnitude *. r[2][2]);
+            kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0
+        };
+    | false do
+        dx = s.kc_state_px *. dt +. (acc.x *. dt2 /. 2.0);
+        dy = s.kc_state_py *. dt +. (acc.y *. dt2 /. 2.0);
+        dz = s.kc_state_pz *. dt +. (acc.z *. dt2 /. 2.0);
+
+        s_updated = {
+            kc_state_x = s.kc_state_x +. (r[0][0] *. dx) +. (r[0][1] *. dy) +. (r[0][2] *. dz);
+            kc_state_y = s.kc_state_y +. (r[1][0] *. dx) +. (r[1][1] *. dy) +. (r[1][2] *. dz);
+            kc_state_z = s.kc_state_z +. (r[2][0] *. dx) +. (r[2][1] *. dy) +. (r[2][2] *. dz) -. (gravity_magnitude *. dt2 /. 2.0);
+            kc_state_px = s.kc_state_px +. dt*.(acc.x +. (gyro.z *. tmpSPY) -. (gyro.y *. tmpSPZ) -. (gravity_magnitude *. r[2][0]));
+            kc_state_py = s.kc_state_py +. dt*.(acc.y -. (gyro.z *. tmpSPX) +. (gyro.x *. tmpSPZ) -. (gravity_magnitude *. r[2][1]));
+            kc_state_pz = s.kc_state_pz +. dt*.(acc.z +. (gyro.y *. tmpSPX) -. (gyro.x *. tmpSPY) -. (gravity_magnitude *. r[2][2]));
+            kc_state_d0 = 0.0; kc_state_d1 = 0.0; kc_state_d2 = 0.0
+        };
+    end;
+
+    dtwx = dt *. gyro.x;
+    dtwy = dt *. gyro.y;
+    dtwz = dt *. gyro.z;
+
+    angle = sqrt(dtwx *. dtwx +. dtwy *. dtwy +. dtwz *. dtwz) +. eps;
+    ca = arm_cos_f32(angle /. 2.0);
+    sa = arm_sin_f32(angle /. 2.0);
+    dq = [ca, (sa *. dtwx)/.angle, (sa *. dtwy)/.angle, (sa *. dtwz)/.angle];
+
+    tmpq0 = dq[0]*.q.qw -. dq[1]*.q.qx -. dq[2]*.q.qy -. dq[3]*.q.qz;
+    tmpq1 = dq[1]*.q.qw +. dq[0]*.q.qx +. dq[3]*.q.qy -. dq[2]*.q.qz;
+    tmpq2 = dq[2]*.q.qw -. dq[3]*.q.qx +. dq[0]*.q.qy +. dq[1]*.q.qz;
+    tmpq3 = dq[3]*.q.qw +. dq[2]*.q.qx -. dq[1]*.q.qy +. dq[0]*.q.qz;
+
+    switch not quad_is_flying
+    | true do
+        keep = 1.0 -. rollpitch_zero_reversion;
+        tmpq0_1 = keep*.tmpq0 +. rollpitch_zero_reversion*.initial_q.qw;
+        tmpq1_1 = keep*.tmpq1 +. rollpitch_zero_reversion*.initial_q.qx;
+        tmpq2_1 = keep*.tmpq2 +. rollpitch_zero_reversion*.initial_q.qy;
+        tmpq3_1 = keep*.tmpq3 +. rollpitch_zero_reversion*.initial_q.qz;
+        norm = arm_sqrt(tmpq0_1*.tmpq0_1 +. tmpq1_1*.tmpq1_1 +. tmpq2_1*.tmpq2_1 +. tmpq3_1*.tmpq3_1) +. eps;
+        q_updated = {qw = tmpq0_1 /. norm; qx = tmpq1_1 /. norm; qy = tmpq2_1 /. norm; qz = tmpq3_1 /. norm};
+    | false do
+        norm = arm_sqrt(tmpq0*.tmpq0 +. tmpq1*.tmpq1 +. tmpq2*.tmpq2 +. tmpq3*.tmpq3) +. eps;
+        q_updated = {qw = tmpq0 /. norm; qx = tmpq1 /. norm; qy = tmpq2 /. norm; qz = tmpq3 /. norm};
+    end;
+tel
+
+
+node kalman_core_predict(this: Mathext.kalman_coredata_t; acc: vec3; gyro: vec3; dt: float; quad_is_flying: bool)
+returns (this_updated: Mathext.kalman_coredata_t);
+var am, am_temp: Mathext.covariance_matrix;
+    s_updated: Mathext.quadrocopter_state;
+    q_updated: Mathext.quaternion;
+let
+    am_temp = linearize(this.r, this.s, gyro, dt);
+    am = covariance_update(am_temp, this.p);
+    (s_updated, q_updated) = prediction_step(this.s, this.r, this.q, this.initial_quaternion, quad_is_flying, acc, gyro, dt);
+    this_updated = {s = s_updated;
+                    q = q_updated;
+                    r = this.r;
+                    p = am;
+                    initial_quaternion = this.initial_quaternion};
+tel
+
+node predict_state_forward( core_data: Mathext.kalman_coredata_t;
+                            gyro_accumulator_count, acc_accumulator_count: float;
+                            gyro_accumulator, acc_accumulator: vec3;
+                            dt: float)
+returns (core_data_updated: Mathext.kalman_coredata_t; did_predict: bool);
+var last gyro_average: vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last acc_average: vec3 = {x = 0.0; y = 0.0; z = 0.0};
+    last quad_is_flying: bool = false;
+let
+    switch (gyro_accumulator_count = 0.0 or acc_accumulator_count = 0.0)
+    | true do
+        core_data_updated = core_data;
+        did_predict = false;
+    | false do
+        gyro_average = {x = gyro_accumulator.x *. deg_to_rad /. gyro_accumulator_count;
+                        y = gyro_accumulator.y *. deg_to_rad /. gyro_accumulator_count;
+                        z = gyro_accumulator.z *. deg_to_rad /. gyro_accumulator_count};
+
+        acc_average = { x = acc_accumulator.x *. gravity_magnitude /. acc_accumulator_count;
+                        y = acc_accumulator.y *. gravity_magnitude /. acc_accumulator_count;
+                        z = acc_accumulator.z *. gravity_magnitude /. acc_accumulator_count};
+        quad_is_flying = supervisor_is_flying();
+        did_predict = true;
+        core_data_updated = kalman_core_predict(core_data, acc_average, gyro_average, dt, quad_is_flying);
+    end;
+tel
+
+node kalman_core_add_process_noise(core_data: Mathext.kalman_coredata_t; dt:float)
+returns (core_data_final: Mathext.kalman_coredata_t);
+var core_data_updated: Mathext.kalman_coredata_t;
+let
+    core_data_updated = { core_data with
+        .p = {
+            kc_state_X = { core_data.p.kc_state_X with .kc_state_x = core_data.p.kc_state_X.kc_state_x +. power((params.proc_noise_acc_xy*.dt*.dt +. params.proc_noise_vel*.dt +. params.proc_noise_pos), 2.0)};
+            kc_state_Y = { core_data.p.kc_state_Y with .kc_state_y = core_data.p.kc_state_Y.kc_state_y +. power((params.proc_noise_acc_xy*.dt*.dt +. params.proc_noise_vel*.dt +. params.proc_noise_pos), 2.0)};
+            kc_state_Z = { core_data.p.kc_state_Z with .kc_state_z = core_data.p.kc_state_Z.kc_state_z +. power((params.proc_noise_acc_z*.dt*.dt +. params.proc_noise_vel*.dt +. params.proc_noise_pos), 2.0)};
+            kc_state_PX = { core_data.p.kc_state_PX with .kc_state_px = core_data.p.kc_state_PX.kc_state_px +. power((params.proc_noise_acc_xy*.dt +. params.proc_noise_vel), 2.0)};
+            kc_state_PY = { core_data.p.kc_state_PY with .kc_state_py = core_data.p.kc_state_PY.kc_state_py +. power((params.proc_noise_acc_xy*.dt +. params.proc_noise_vel), 2.0)};
+            kc_state_PZ = { core_data.p.kc_state_PZ with .kc_state_pz = core_data.p.kc_state_PZ.kc_state_pz +. power((params.proc_noise_acc_z*.dt +. params.proc_noise_vel), 2.0)};
+            kc_state_D0 = { core_data.p.kc_state_D0 with .kc_state_d0 = core_data.p.kc_state_D0.kc_state_d0 +. power((params.proc_noise_gyro_rollpitch*.dt +. params.proc_noise_att), 2.0)};
+            kc_state_D1 = { core_data.p.kc_state_D1 with .kc_state_d1 = core_data.p.kc_state_D1.kc_state_d1 +. power((params.proc_noise_gyro_rollpitch*.dt +. params.proc_noise_att), 2.0)};
+            kc_state_D2 = { core_data.p.kc_state_D2 with .kc_state_d2 = core_data.p.kc_state_D2.kc_state_d2 +. power((params.proc_noise_gyro_yaw*.dt +. params.proc_noise_att), 2.0)}
+        }
+    };
+    core_data_final = {core_data_updated with .p = enforce_covariance_matrix_symmetry(core_data_updated.p)};
+tel
+
+node move_attitude_error_to_attitude(q: Mathext.quaternion;
+                                    kc_state_d0, kc_state_d1, kc_state_d2: float;
+                                    p: Mathext.covariance_matrix)
+returns (q_updated: Mathext.quaternion; p_updated: Mathext.covariance_matrix);
+var last am: Mathext.covariance_matrix = null_matrix;
+    v0, v1, v2: float;
+    last angle: float = 0.0;
+    last ca: float = 0.0;
+    last sa: float = 0.0;
+    last dq: float^4 = [0.0, 0.0, 0.0, 0.0];
+    last tmpq0: float = 0.0;
+    last tmpq1: float = 0.0;
+    last tmpq2: float = 0.0;
+    last tmpq3: float = 0.0;
+    last norm: float = 0.0;
+    last d0: float = 0.0;
+    last d1: float = 0.0;
+    last d2: float = 0.0;
+    last d0_q: Mathext.quadrocopter_state = null_quadrocopter_state;
+    last d1_q: Mathext.quadrocopter_state = null_quadrocopter_state;
+    last d2_q: Mathext.quadrocopter_state = null_quadrocopter_state;
+let
+    v0 = kc_state_d0;
+    v1 = kc_state_d1;
+    v2 = kc_state_d2;
+
+    switch  ((fabs(v0) >. 0.0001) or (fabs(v1) >. 0.0001) or (fabs(v2) >. 0.0001)) and
+            ((fabs(v0) <. 10.0) and (fabs(v1) <. 10.0) and (fabs(v2) <. 10.0))
+    | true do
+        angle = arm_sqrt(v0*.v0 +. v1*.v1 +. v2*.v2) +. eps;
+        ca = arm_cos_f32(angle /. 2.0);
+        sa = arm_sin_f32(angle /. 2.0);
+        dq = [ca, sa*.v0/.angle, sa*.v1/.angle, sa*.v2/.angle];
+
+        tmpq0 = dq[0] *. q.qw -. dq[1] *. q.qx -. dq[2] *. q.qy -. dq[3] *. q.qz;
+        tmpq1 = dq[1] *. q.qw +. dq[0] *. q.qx +. dq[3] *. q.qy -. dq[2] *. q.qz;
+        tmpq2 = dq[2] *. q.qw -. dq[3] *. q.qx +. dq[0] *. q.qy +. dq[1] *. q.qz;
+        tmpq3 = dq[3] *. q.qw +. dq[2] *. q.qx -. dq[1] *. q.qy +. dq[0] *. q.qz;
+
+        norm = arm_sqrt(tmpq0*.tmpq0 +. tmpq1*.tmpq1 +. tmpq2*.tmpq2 +. tmpq3*.tmpq3) +. eps;
+        q_updated = {qw = tmpq0/.norm; qx = tmpq1/.norm; qy = tmpq2/.norm; qz = tmpq3/.norm};
+
+        d0 = v0/.2.0;
+        d1 = v1/.2.0;
+        d2 = v2/.2.0;
+
+        (d0_q, d1_q, d2_q) = attitude_err_from_attitude_err(d0, d1, d2);
+
+        am = {
+            kc_state_X = {null_quadrocopter_state with .kc_state_x = 1.0};
+            kc_state_Y = {null_quadrocopter_state with .kc_state_y = 1.0};
+            kc_state_Z = {null_quadrocopter_state with .kc_state_z = 1.0};
+            kc_state_PX = {null_quadrocopter_state with .kc_state_px = 1.0};
+            kc_state_PY = {null_quadrocopter_state with .kc_state_py = 1.0};
+            kc_state_PZ = {null_quadrocopter_state with .kc_state_pz = 1.0};
+            kc_state_D0 = d0_q;
+            kc_state_D1 = d1_q;
+            kc_state_D2 = d2_q
+        };
+
+        p_updated = covariance_update(am, p);
+
+    | false do
+        q_updated = q;
+        p_updated = p;
+    end;
+tel
+
+node convert_attitude_to_rotation_matrix(q: Mathext.quaternion)
+returns (r: float^3^3);
+let
+    r =[[ q.qw*.q.qw +. q.qx*.q.qx -. q.qy*.q.qy -. q.qz*.q.qz,
+          2.0*.q.qx*.q.qy -. 2.0*.q.qw*.q.qz,
+          2.0*.q.qx*.q.qz +. 2.0*.q.qw*.q.qy],
+
+        [ 2.0*.q.qx*.q.qy +. 2.0*.q.qw*.q.qz,
+          q.qw*.q.qw -. q.qx*.q.qx +. q.qy*.q.qy -. q.qz*.q.qz,
+          2.0*.q.qy*.q.qz -. 2.0*.q.qw*.q.qx],
+
+        [ 2.0*.q.qx*.q.qz -. 2.0*.q.qw*.q.qy,
+          2.0*.q.qy*.q.qz +. 2.0*.q.qw*.q.qx,
+          q.qw*.q.qw -. q.qx*.q.qx -. q.qy*.q.qy +. q.qz*.q.qz]
+    ];
+tel
+
+node kalman_core_finalize(this: Mathext.kalman_coredata_t)
+returns (this_final: Mathext.kalman_coredata_t);
+var q_updated: Mathext.quaternion;
+    p_updated: Mathext.covariance_matrix;
+    r_updated: float^3^3;
+    s_updated: Mathext.quadrocopter_state;
+    p_final: Mathext.covariance_matrix;
+let
+    (q_updated, p_updated) = move_attitude_error_to_attitude(this.q, this.s.kc_state_d0, this.s.kc_state_d1, this.s.kc_state_d2, this.p);
+    r_updated = convert_attitude_to_rotation_matrix(q_updated);
+    s_updated = {   
+        kc_state_x = this.s.kc_state_x;
+        kc_state_y = this.s.kc_state_y;
+        kc_state_z = this.s.kc_state_z;
+        kc_state_px = this.s.kc_state_px;
+        kc_state_py = this.s.kc_state_py;
+        kc_state_pz = this.s.kc_state_pz;
+        kc_state_d0 = 0.0;
+        kc_state_d1 = 0.0;
+        kc_state_d2 = 0.0
+    };
+    p_final = enforce_covariance_matrix_symmetry(p_updated);
+    this_final = {  
+        s = s_updated;
+        q = q_updated;
+        r = r_updated;
+        p = p_final;
+        initial_quaternion = this.initial_quaternion
+    };
+tel
+
+node kalman_supervisor_is_state_within_bounds(this: Mathext.kalman_coredata_t)
+returns (ok: bool);
+let
+    ok = if (this.s.kc_state_x >. max_position or this.s.kc_state_x <. -.max_position or
+            this.s.kc_state_y >. max_position or this.s.kc_state_y <. -.max_position or
+            this.s.kc_state_z >. max_position or this.s.kc_state_z <. -.max_position or
+            this.s.kc_state_px >. max_velocity or this.s.kc_state_px <. -.max_velocity or
+            this.s.kc_state_py >. max_velocity or this.s.kc_state_py <. -.max_velocity or
+            this.s.kc_state_pz >. max_velocity or this.s.kc_state_pz <. -.max_velocity)
+        then false
+        else true;
+tel
+
+node kalman_core_externalize_state(this: Mathext.kalman_coredata_t; acc: vec3)
+returns (st: state_t);
+var roll, pitch, yaw: float;
+let
+    yaw = atan2(2.0*.(this.q.qx*.this.q.qy +. this.q.qw*.this.q.qz), this.q.qw*.this.q.qw +. this.q.qx*.this.q.qx -. this.q.qy*.this.q.qy -. this.q.qz*.this.q.qz);
+    pitch = asin(-.2.0*.(this.q.qx*.this.q.qz -. this.q.qw*.this.q.qy));
+    roll = atan2(2.0*.(this.q.qy*.this.q.qz +. this.q.qw*.this.q.qx), this.q.qw*.this.q.qw -. this.q.qx*.this.q.qx -. this.q.qy*.this.q.qy +. this.q.qz*.this.q.qz);
+
+    st = {
+        st_position = { x = this.s.kc_state_x; 
+                        y = this.s.kc_state_y; 
+                        z = this.s.kc_state_z};
+
+        st_velocity = {x = this.r[0][0] *. this.s.kc_state_px +. this.r[0][1] *. this.s.kc_state_py +. this.r[0][2] *. this.s.kc_state_pz;
+                       y = this.r[1][0] *. this.s.kc_state_px +. this.r[1][1] *. this.s.kc_state_py +. this.r[1][2] *. this.s.kc_state_pz;
+                       z = this.r[2][0] *. this.s.kc_state_px +. this.r[2][1] *. this.s.kc_state_py +. this.r[2][2] *. this.s.kc_state_pz};
+
+        st_acc = {  x = this.r[0][0]*.acc.x +. this.r[0][1]*.acc.y +. this.r[0][2]*.acc.z;
+                    y = this.r[1][0]*.acc.x +. this.r[1][1]*.acc.y +. this.r[1][2]*.acc.z;
+                    z = this.r[2][0]*.acc.x +. this.r[2][1]*.acc.y +. this.r[2][2]*.acc.z -. 1.0};
+
+        st_attitude = { roll = roll*.rad_to_deg;
+                        pitch = -.(pitch*.rad_to_deg);
+                        yaw = yaw*.rad_to_deg};
+
+        st_attitude_quat = { qx = this.q.qx;
+                             qy = this.q.qy;
+                             qz = this.q.qz;
+                             qw = this.q.qw}
+    };
+tel
+
+
+
+(* TITA: updateQueuedMeasurements stuff *)
+(* kalmanCoreScalarUpdate in Mathext, need to add 
+updates for measurement types TOF, flow and Baro *)
+
+(* Measurement Type TOF *)
+node kalman_core_update_with_tof(core_data: Mathext.kalman_coredata_t; measurement: tof )
+returns (core_data_updated: Mathext.kalman_coredata_t);
+var h : Mathext.quadrocopter_state;
+    angle, predicted_distance, measured_distance: float;
+let
+    angle = if fabs(acos(core_data.r[2][2])) -. deg_to_rad *. (15.0 /. 2.0) <. 0.0 then 0.0 else fabs(acos(core_data.r[2][2])) -. deg_to_rad *. (15.0 /. 2.0);
+    predicted_distance = core_data.s.kc_state_z /. core_data.r[2][2];
+    measured_distance = measurement.distance;
+    h = {  null_quadrocopter_state with .kc_state_z = 1.0 /. core_data.r[2][2]};
+    core_data_updated = 
+        if (fabs(core_data.r[2][2]) >. 0.1 & core_data.r[2][2]>.0.0) then 
+            kalman_core_scalar_update(core_data, h, measured_distance -. predicted_distance, measurement.stdDev)
+        else 
+            core_data;
+tel
+
+node kalman_core_update_with_flow(core_data: Mathext.kalman_coredata_t; flow_measurement: flow; gyro: vec3)
+returns (core_data_updated: Mathext.kalman_coredata_t);
+var npix, thetapix, z_g, omega_factor: float; (* these are constants -> move somewhere else TODO*)
+    omegax_b, omegay_b, dx_g, dy_g: float;
+    hx, hy, hx_tmp, hy_tmp: Mathext.quadrocopter_state;
+    predicted_nx, measured_nx, predicted_ny, measured_ny: float;
+    core_data_tmp: Mathext.kalman_coredata_t;
+    print_state:bool;
+let
+    npix = 30.0;
+    thetapix = deg_to_rad *. 4.2;  (* TODO gets rounded to 0.073304, should be 0.0733038286, in c it is 0.073303824*)
+    omega_factor = 1.25;
+    omegax_b = gyro.x *. deg_to_rad;
+    omegay_b = gyro.y *. deg_to_rad;
+    dx_g = core_data.s.kc_state_px;
+    dy_g = core_data.s.kc_state_py;
+    z_g = if core_data.s.kc_state_z <. 0.1 then 0.1 else core_data.s.kc_state_z;
+
+    predicted_nx = (flow_measurement.dt *. npix /. thetapix) *.((dx_g *. core_data.r[2][2] /. z_g) +. omega_factor *. omegay_b);
+    measured_nx = flow_measurement.dpixelx;
+    hx_tmp = {null_quadrocopter_state with .kc_state_z = (npix *. flow_measurement.dt /. thetapix) *. ((core_data.r[2][2]*.dx_g)/.(-.z_g*.z_g))};
+    hx = {hx_tmp with .kc_state_px =(npix *. flow_measurement.dt /. thetapix) *. (core_data.r[2][2]/. z_g) };
+    core_data_tmp = kalman_core_scalar_update(core_data, hx, measured_nx -. predicted_nx, flow_measurement.std_dev_x);
+
+    predicted_ny = (flow_measurement.dt *. npix /. thetapix) *.((dy_g *. core_data.r[2][2] /. z_g) +. omega_factor *. omegax_b);
+    measured_ny = flow_measurement.dpixely;
+    hy_tmp = {null_quadrocopter_state with .kc_state_z = (npix *. flow_measurement.dt /. thetapix) *. ((core_data.r[2][2]*.dy_g)/.(-.z_g*.z_g))};
+    hy = {hy_tmp with .kc_state_py =(npix *. flow_measurement.dt /. thetapix) *. (core_data.r[2][2]/. z_g) };
+    print_state = relay_state(hy); (* Do not remove this line, otherwise it will store hy in the output and it will break *)
+    core_data_updated= kalman_core_scalar_update(core_data_tmp, hy, measured_ny -. predicted_ny, flow_measurement.std_dev_y);
+tel
+
+
+node update_accumulator(ck:bool; m: vec3 when ck; latest_m, accumulator: vec3; accumulator_count: float)
+returns (latest_m_updated, accumulator_updated: vec3; accumulator_count_updated: float);
+let
+    latest_m_updated = merge ck (true -> m) (false -> latest_m);
+    accumulator_count_updated = if ck then accumulator_count +. 1.0 else accumulator_count;
+    accumulator_updated = merge ck (true -> { x = accumulator.x when ck +. m.x;
+          y = accumulator.y when ck +. m.y;
+          z = accumulator.z when ck +. m.z }) (false -> accumulator when not ck);
+tel
+
+node vec_add(v: vec3; w: vec3)
+returns (sum: vec3);
+let
+    sum = {
+        x = v.x +. w.x;
+        y = v.y +. w.y;
+        z = v.z +. w.z    }
+tel
+
+node accumulate_acc (c: bool; m: vec3 when c)
+returns (acc: vec3; count: float;  latest_m: vec3);
+var tmp_acc: vec3; tmp_count: float; tmp_latest_m: vec3;
+let
+    tmp_acc = init_vec3 fby acc;
+    tmp_count = 0.0 fby count;
+    tmp_latest_m = init_vec3 fby latest_m;
+    acc = merge c (true -> vec_add(tmp_acc when c, m)) (false -> tmp_acc when not c);
+    count = merge c (true -> tmp_count when c +. 1.0) (false -> tmp_count when not c);
+    latest_m = merge c (true -> m) (false -> tmp_latest_m when not c);
+tel
+
+node accumulate_gyro (c: bool; m: vec3 when c)
+returns (acc: vec3; count: float; latest_m: vec3);
+var tmp_acc: vec3; tmp_count: float; tmp_latest_m: vec3;
+let
+    tmp_acc = init_vec3 fby acc;
+    tmp_count = 0.0 fby count;
+    tmp_latest_m = init_vec3 fby latest_m;
+    acc = merge c (true -> vec_add(tmp_acc when c, m)) (false -> tmp_acc when not c);
+    count = merge c (true -> tmp_count when c +. 1.0) (false -> tmp_count when not c);
+    latest_m = merge c (true -> m) (false -> tmp_latest_m when not c);
+tel
+
+
+
+node update_measurement(this: Mathext.kalman_coredata_t ::.;
+    c_flow, c_tof: bool :: .; 
+    m_flow: flow; m_tof: tof ::.; 
+    gyro_latest: vec3
+    )
+returns (done_update: bool; core_data_updated: Mathext.kalman_coredata_t);
+let
+
+    switch c_flow 
+    | true do
+        core_data_updated = kalman_core_update_with_flow(this, m_flow, gyro_latest);
+    | false do
+        switch c_tof 
+        | true do 
+            core_data_updated = kalman_core_update_with_tof(this, m_tof);
+        |false do 
+            core_data_updated = this;
+        end;
+    end;
+    done_update = c_flow or c_tof ;
+tel 
+
+(* main kalman task  *)
+
+node kalman_task(c_flow, c_tof, c_gyro, c_acc: bool;
+                m_flow: flow; m_tof: tof; 
+                m_gyro: vec3; m_acc: vec3)
+returns (st : state_t;
+        done_update: bool);
+var 
+    prediction_freq: bool;
+    last did_predict: bool = false;
+    core_data: Mathext.kalman_coredata_t at l1;
+    core_data_0, core_data_1, core_data_2, core_data_3: Mathext.kalman_coredata_t at l1;
+    gyro_accumulator, acc_accumulator, gyro_latest, acc_latest: vec3;
+    gyro_acc_count,  acc_acc_count: float;
+    last reset_estimation: bool = false;
+let
+    reset 
+        core_data = init_core_data fby core_data_3;
+    every (false fby reset_estimation);
+
+    reset
+        (acc_accumulator, acc_acc_count, acc_latest) = accumulate_acc(c_acc, m_acc);
+        (gyro_accumulator, gyro_acc_count, gyro_latest) = accumulate_gyro(c_gyro, m_gyro);
+    every (false fby (did_predict or reset_estimation));
+
+    switch (prediction_freq)
+    | true do
+        (core_data_0, did_predict) = 
+        predict_state_forward(core_data, 
+            gyro_acc_count, acc_acc_count, 
+            gyro_accumulator, acc_accumulator, 
+            0.01);
+        (* external call to STATS_CNT_RATE_EVENT(&predictionCounter); *)
+    | false do
+        core_data_0 = core_data;
+        last_prediction_updated = last_prediction;
+        next_prediction_updated = next_prediction;
+    end;
+
+    core_data_1 = kalman_core_add_process_noise(core_data_0, 0.001);
+    
+
+    (done_update, core_data_2) = 
+    update_measurement(core_data_1, c_flow, c_tof, m_flow, m_tof, gyro_latest);
+
+    switch (done_update or did_predict)
+    | true do
+        core_data_3 = kalman_core_finalize(core_data_2);
+        reset_estimation = not kalman_supervisor_is_state_within_bounds(core_data_3);
+        (* external call to STATS_CNT_RATE_EVENT(&finalizeCounter); *)
+    | false do
+        core_data_3 = core_data_2;
+    end;
+
+    st = kalman_core_externalize_state(core_data_3, acc_latest);
+
+    (* external call to STATS_CNT_RATE_EVENT(&updateCounter); *)
+
+
+tel 
+
+
+(* ---------------------------------------------------------------------------------------- *)
+(* LEDs *)
+
+(* constants *)
+
+(* const led_blue_l   : int = 0
+const led_green_l  : int = 1
+const led_red_l    : int = 2
+const led_green_r  : int = 3
+const led_red_r    : int = 4
+const led_blue_nrf : int = 5
+
+const link_led      : int = led_green_l
+const chg_led       : int = led_blue_l
+const lowbat_led    : int = led_red_r
+const link_down_led : int = led_red_l
+const sys_led       : int = led_red_r
+const err_led1      : int = led_red_l
+const err_led2      : int = led_red_r *)
+
+
+const led_num: int = 6
+
+type led_state = {
+    led_blue_l   : bool;
+    led_green_l  : bool;
+    led_red_l    : bool;
+    led_green_r  : bool;
+    led_red_r    : bool;
+    led_blue_nrf : bool
+}
+
+const null_state: led_state = {
+    led_blue_l   = false;
+    led_green_l  = false;
+    led_red_l    = false;
+    led_green_r  = false;
+    led_red_r    = false;
+    led_blue_nrf = false
+}
+
+(* Individual led states *)
+
+node led_on_every_n_tick (n: int)
+returns (led_state: bool);
+var last clock: int = 0;
+let
+    automaton
+        state ON
+            do led_state = true
+            unless ((last clock) > 0) then OFF
+        state OFF
+            do led_state = false
+            unless ((last clock) = 0) then ON
+    end;
+    clock = ((last clock) + 1) % n;
+tel
+
+node led_seq_everyn(n: int)
+returns (led_state: led_state);
+var last clock: int = 0;
+    led_on: bool;
+let
+    led_on = led_on_every_n_tick(n);
+    automaton
+        state BLUE_L
+            do led_state = {null_state with .led_blue_l = led_on};
+            unless ((last clock) > 20) then GREEN_L
+        state GREEN_L
+            do led_state = {null_state with .led_green_l = led_on};
+            unless ((last clock) > 40) then RED_L
+        state RED_L
+            do led_state = {null_state with .led_red_l = led_on};
+            unless ((last clock) > 60) then GREEN_R
+        state GREEN_R
+            do led_state = {null_state with .led_green_r = led_on};
+            unless ((last clock) > 80) then RED_R
+        state RED_R
+            do led_state = {null_state with .led_red_r = led_on};
+            unless ((last clock) > 100) then BLUE_R
+        state BLUE_R
+            do led_state = {null_state with .led_blue_nrf = led_on};
+            unless ((last clock) = 0) then BLUE_L
+    end;
+    clock = ((last clock) + 1) % 120;
+tel
+
+node ledseq_task()
+returns (last led_state: led_state = null_state);
+var led_freq: bool;
+let
+    led_freq = everyn<<100>>();
+
+    switch (led_freq)
+    | true do
+        led_state = led_seq_everyn(2);
+    | false do
+    end;
+tel

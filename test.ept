@@ -1,0 +1,15 @@
+type wrap = {
+     z : float
+}
+type vec = {
+     x : wrap;
+     y : wrap     
+}
+
+node assign(val_x, val_y: float)
+returns (v: vec);
+let
+     v = {  x = {z = val_x};
+            y = {z = val_y}}
+     
+tel
